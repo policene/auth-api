@@ -3,13 +3,16 @@
 require_once __DIR__ . '/../../vendor/autoload.php';
 
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 
-class AuthService {
+$dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
+$dotenv->load();
+
+class AuthService {    
 
     public static function generateToken ($credentials) {
 
-        $dotenv = Dotenv\Dotenv::createImmutable(__DIR__ . '/../../');
-        $dotenv->load();
+        
 
         $secret = $_ENV['JWT_SECRET'];
 
@@ -43,9 +46,30 @@ class AuthService {
 
         return $token;
 
+    }
 
+    public static function verifyToken ($token, $id) : bool {
+    
+        if (!$token || !$id) {
+            return false;
+        }
+        
+        try {
 
+            $decoded = JWT::decode($token, new Key($_ENV['JWT_SECRET'], 'HS256'));
+            $user = UserRepository::getById($id);
 
+            if (!$user) return false;
+
+            return (
+                $decoded-> email === $user->getEmail()
+                &&
+                $decoded-> exp > time()
+            );
+
+        } catch (Exception $e) {
+            return false;
+        }
     }
 
 }

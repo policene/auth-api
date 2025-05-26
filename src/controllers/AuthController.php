@@ -19,7 +19,27 @@ class AuthController {
         } catch (IncorrectCredentialsException $e) {
             http_response_code(401);
             echo json_encode(['error' => $e->getMessage()]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
         }
+    }
+
+    public static function verifyToken() {
+
+        $headers = getallheaders();
+        $token = str_replace('Bearer ', '', $headers['Authorization'] ?? '');
+        $userId = $_GET['id'] ?? null;
+        
+        try {
+            $auth = AuthService::verifyToken($token, $userId);
+            http_response_code(200);
+            echo json_encode(['auth' => $auth]);
+        } catch (Exception $e) {
+            http_response_code(500);
+            echo json_encode(['error' => $e->getMessage()]);
+        }
+
     }
 
 

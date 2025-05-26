@@ -14,17 +14,15 @@ if ($method === 'POST' && $path === '/user') {
 } 
 
 elseif ($method === 'GET' && $path === '/user') {
-    $email = $_GET['email'] ?? null;
-     if ($email) {
-        UserController::getByEmail($email);
-    } else {
-        http_response_code(400);
-        echo json_encode(['error' => 'Email parameter is required.']);
-    }
+    UserController::getByEmail();
 } 
 
 elseif ($method === 'POST' && $path === '/token') {
     AuthController::generateToken();
+}
+
+elseif ($method === 'GET' && $path === '/token') {
+    AuthController::verifyToken();
 }
 
 else {

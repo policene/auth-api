@@ -40,6 +40,23 @@ class UserRepository {
 
     }
 
+    public static function getById (int $id) : ?User {
+        $pdo = getConnection();
+        $stmt = $pdo->prepare('SELECT name, last_name, email, password FROM users WHERE id = :id LIMIT 1');
+        $stmt->execute(['id' => $id]);
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) return null;
+
+        return new User (
+            $row['name'],
+            $row['last_name'],
+            $row['email'],
+            $row['password']
+        );
+
+    }
+
 }
 
 ?>

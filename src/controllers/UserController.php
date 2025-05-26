@@ -28,7 +28,14 @@ class UserController {
         }
     } 
 
-    public static function getByEmail($email) {
+    public static function getByEmail() {
+
+        $email = $_GET['email'] ?? null;
+        if (!$email || trim($email) === '') {
+        http_response_code(400);
+        echo json_encode(['error' => 'Email param is required.']);
+        return;
+        }
 
         try {
             $response = UserService::getByEmail($email);
