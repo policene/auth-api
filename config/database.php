@@ -2,7 +2,7 @@
 
 function getConnection() {
     $host = 'localhost';
-    $dbname = 'auth-api';
+    $dbname = 'auth-db';
     $port = '5433';
     $user = 'user';
     $pass = 'password';

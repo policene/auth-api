@@ -6,15 +6,18 @@ class UserService {
 
     public static function createUser($data) {
 
-        if (!isset($data['name']) || !isset($data['lastName']) || !isset($data['email']) || !isset($data['password'])) {
-            throw new InvalidArgumentException("All fields must be filled.");
+        $requiredFields = ['name', 'lastName', 'email', 'password'];
+        foreach ($requiredFields as $field) {
+        if (!isset($data[$field]) || trim($data[$field]) === '') {
+                throw new InvalidArgumentException("Field '$field' must be filled.");
+            }
         }
 
         if (!filter_var($data['email'], FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException("Invalid email format.");
         }
 
-        if (UserRepository::findByEmail($data['email']) === true) {
+        if (UserRepository::existsByEmail($data['email']) === true) {
             throw new ConflictException("This email is already registered.");
         }
 
@@ -24,6 +27,25 @@ class UserService {
         UserRepository::saveUser($user);
         return $user->toPublicArray();
     }
+
+
+    public static function getByEmail($email) {
+
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            throw new InvalidArgumentException("Invalid email format for search.");
+        }
+
+        $user = UserRepository::getByEmail($email);
+
+        if ($user == null) {
+            throw new UserNotFoundException("User with email $email not found.");
+        }
+
+        return $user->toPublicArray();
+    }
+
+
+
 }
 
 ?>
