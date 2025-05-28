@@ -1,8 +1,11 @@
 <?php
 
 require_once __DIR__ . '/../repositories/UserRepository.php';
+require_once __DIR__ . '/../../config/cache.php';
 
-class UserService {
+class UserService {    
+
+
 
     public static function createUser($data) {
 
@@ -17,7 +20,16 @@ class UserService {
             throw new InvalidArgumentException("Invalid email format.");
         }
 
-        if (UserRepository::existsByEmail($data['email']) === true) {
+        $cache = new Cache();
+        $email = $data['email'];
+        $cacheKey = "user:exists:$email";
+        $cachedData = $cache->get($cacheKey);
+        if ($cachedData === 'true') {
+            throw new ConflictException("This email is already registered.");
+        }
+
+        if (UserRepository::existsByEmail($email) === true) {
+            $cache->set($cacheKey, 'true', 600);
             throw new ConflictException("This email is already registered.");
         }
 
@@ -25,6 +37,7 @@ class UserService {
 
         $user = new User($data['name'], $data['lastName'], $data['email'], $passwordHash);
         UserRepository::saveUser($user);
+        $cache->set($cacheKey, 'true', 600);
         return $user->toPublicArray();
     }
 
@@ -35,13 +48,24 @@ class UserService {
             throw new InvalidArgumentException("Invalid email format for search.");
         }
 
+        $cache = new Cache();
+        $cacheKey = "user:$email";
+
+        $cachedData = $cache->get($cacheKey);
+        if ($cachedData) {
+             return json_decode($cachedData, true);
+        }   
+
         $user = UserRepository::getByEmail($email);
 
         if ($user == null) {
             throw new UserNotFoundException("User with email $email not found.");
         }
 
-        return $user->toPublicArray();
+        $userArray = $user->toPublicArray();
+        $cache->set($cacheKey, json_encode($userArray), 600);
+
+        return $userArray;
     }
 
 

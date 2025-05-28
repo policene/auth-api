@@ -12,7 +12,6 @@ class AuthService {
 
     public static function generateToken ($credentials) {
 
-        
 
         $secret = $_ENV['JWT_SECRET'];
 
@@ -26,14 +25,33 @@ class AuthService {
         $email = $credentials['email'];
         $password = $credentials['password'];
 
-        $user = UserRepository::getByEmail($email);
+        $cache = new Cache();
+        $cacheKey = "user:$email";
+        $cachedData = $cache->get($cacheKey);
 
-        if ($user == null) {
-            throw new IncorrectCredentialsException('Incorrect credentials.');
-        }
+        if ($cachedData) {
 
-        if (!password_verify($password, $user->getPassword())) {
-            throw new IncorrectCredentialsException('Incorrect credentials.');
+            $userArray = json_decode($cachedData, true);
+            $user = new User (
+                $userArray['name'],
+                $userArray['lastName'],
+                $userArray['email'],
+                $userArray['password'] 
+            );
+
+        } else {
+
+            $user = UserRepository::getByEmail($email);
+            if ($user == null) {
+                throw new IncorrectCredentialsException('Incorrect credentials.');
+            }
+            if (!password_verify($password, $user->getPassword())) {
+                throw new IncorrectCredentialsException('Incorrect credentials.');
+            }
+
+            $userArray = $user->toPublicArray();
+            $cache->set($cacheKey, json_encode($userArray), 600);
+
         }
 
         $payload = [
@@ -55,16 +73,32 @@ class AuthService {
         }
         
         try {
-
             $decoded = JWT::decode($token, new Key($_ENV['JWT_SECRET'], 'HS256'));
-            $user = UserRepository::getById($id);
 
-            if (!$user) return false;
+            $cache = new Cache();
+            $cacheKey = "user:$id";
+            $cachedData = $cache->get($cacheKey);
+            if ($cachedData){
+                $userArray = json_decode($cachedData, true);
+                $user = new User (
+                    $userArray['name'],
+                    $userArray['lastName'],
+                    $userArray['email'],
+                    $userArray['password'] 
+                );
+            } else {
+                $user = UserRepository::getById($id);
+                if (!$user) {
+                    return false;
+                }
+                $userArray = $user->toPublicArray();
+                $cache->set($cacheKey, json_encode($userArray), 600);
+            }
 
             return (
-                $decoded-> email === $user->getEmail()
+                $decoded->email === $user->getEmail()
                 &&
-                $decoded-> exp > time()
+                $decoded->exp > time()
             );
 
         } catch (Exception $e) {
