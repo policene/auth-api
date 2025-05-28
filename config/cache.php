@@ -9,7 +9,7 @@ class Cache {
     public function __construct() {
         $this->redis = new Client([
             'scheme' => 'tcp',
-            'host'   => 'localhost',
+            'host'   => 'redis',
             'port'   => 6379,
         ]);
     }

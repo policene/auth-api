@@ -1,35 +1,39 @@
+version: '3.8'
+
 services:
-  redis:
-    image: redis:7
-    container_name: redis-php
-    ports: 
-      - "6379:6379"
-    networks:
-      - php-network
-
-  postgres:
-    image: postgres:17
-    container_name: postgres-php
-    environment:
-      - POSTGRES_DB: auth-db
-      - POSTGRES_USER: user
-      - POSTGRES_PASSWORD: password
-    ports:
-      - "5433:5432" 
-    networks:
-      - php-network
-
-  auth-api:
+  app:
     build: .
     container_name: php-app
+    volumes:
+      - .:/var/www/html
+    ports:
+      - "8000:8000"
     depends_on:
       - redis
       - postgres
-    ports:
-      - "8000:8000"
     networks:
-      - php-network
+      - app-network
+
+  redis:
+    image: redis:7
+    container_name: redis-php
+    ports:
+      - "6379:6379"
+    networks:
+      - app-network
+
+  postgres:
+    image: postgres:15
+    container_name: postgres-php
+    environment:
+      POSTGRES_DB: auth-db
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+    ports:
+      - "5433:5432"
+    networks:
+      - app-network
 
 networks:
-  php-network:
+  app-network:
     driver: bridge

@@ -6,7 +6,10 @@ RUN apt-get update && apt-get install -y \
     git \
     && docker-php-ext-install pdo pdo_pgsql
 
-COPY . /var/www/html/
+COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
+WORKDIR /var/www/html
+COPY . .
+RUN composer install
 
 EXPOSE 8000
-CMD ["php", "-S", "0.0.0.0:8000", "-t", "/var/www/html"]
+CMD ["php", "-S", "0.0.0.0:8000", "index.php"]
